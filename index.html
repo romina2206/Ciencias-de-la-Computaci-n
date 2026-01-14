@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ejercicio Python</title>
+
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+    }
+    .consigna {
+      background: #ffffff;
+      padding: 15px;
+      border-left: 5px solid #0087C8;
+      margin-bottom: 15px;
+    }
+    textarea {
+      width: 100%;
+      height: 220px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    pre {
+      background: #111;
+      color: #0f0;
+      padding: 10px;
+      min-height: 120px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="consigna">
+  <h3>Ejercicio 37 – Gestión de tareas</h3>
+  <p>
+    Programá un sistema básico de gestión de tareas <b>sin usar listas ni bucles</b>.
+    Todas las tareas se guardan en una sola cadena de texto separadas por <code>", "</code>.
+  </p>
+  <ul>
+    <li>Completá las funciones indicadas</li>
+    <li>No modifiques el código de prueba</li>
+    <li>Usá únicamente strings y condicionales</li>
+  </ul>
+</div>
+
+<textarea id="code">
+# EJERCICIO 37
+
+def agregar_tarea(tareas, tarea_nueva):
+    pass
+
+def mostrar_tareas(tareas):
+    pass
+
+def eliminar_tarea(tareas, tarea_a_borrar):
+    pass
+
+# --- Código de prueba ---
+print("--- Gestión de Tareas ---")
+mis_tareas = ""
+mis_tareas = agregar_tarea(mis_tareas, "Estudiar Python")
+mostrar_tareas(mis_tareas)
+</textarea>
+
+<button onclick="runCode()">▶ Ejecutar</button>
+
+<h4>Salida:</h4>
+<pre id="output"></pre>
+
+<script>
+  let pyodideReady = loadPyodide();
+
+  async function runCode() {
+    const output = document.getElementById("output");
+    output.textContent = "";
+
+    const code = document.getElementById("code").value;
+    const pyodide = await pyodideReady;
+
+    try {
+      await pyodide.runPythonAsync(code);
+    } catch (err) {
+      output.textContent = err;
+    }
+  }
+
+  // Redirigir stdout a la consola
+  loadPyodide().then(pyodide => {
+    pyodide.setStdout({
+      batched: (text) => {
+        document.getElementById("output").textContent += text;
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
