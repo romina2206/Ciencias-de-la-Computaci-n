@@ -1,121 +1,155 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Ejercicio 37 – Gestión de tareas</title>
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+<meta charset="UTF-8">
+<title>Primera Ley de Newton – Inercia (3D)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 15px;
-      background: #f7f7f7;
-    }
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+}
 
-    textarea {
-      width: 100%;
-      height: 300px;
-      font-family: monospace;
-      font-size: 14px;
-    }
+h1 {
+    margin: 10px;
+    color: #5A2382;
+}
 
-    button {
-      margin-top: 10px;
-      padding: 8px 16px;
-      font-size: 14px;
-    }
+#ui {
+    position: absolute;
+    top: 70px;
+    left: 10px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    width: 220px;
+}
 
-    pre {
-      background: #111;
-      color: #0f0;
-      padding: 10px;
-      min-height: 120px;
-      white-space: pre-wrap;
-    }
-  </style>
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #E6500F;
+    border: none;
+    color: white;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+</style>
 </head>
 
 <body>
 
-<h2>Ejercicio 37 – Gestión de tareas</h2>
+<h1>Primera Ley de Newton – Inercia</h1>
 
-<p>
-Programá un sistema básico de gestión de tareas <b>sin usar listas ni bucles</b>.
-<br>
-Todas las tareas se guardan en una sola cadena de texto separadas por <code>", "</code>.
-</p>
+<div id="ui">
+    <p>
+        Si no actúa una fuerza neta,<br>
+        el movimiento no cambia.
+    </p>
 
-<p>
-<b>Completá las funciones indicadas.</b><br>
-<b>No modifiques el código de prueba.</b><br>
-<b>Usá únicamente strings y condicionales.</b>
-</p>
+    <label>
+        <input type="checkbox" id="friction">
+        Con fricción
+    </label>
 
-<textarea id="code">
-# EJERCICIO 37
+    <button onclick="pushBlock()">Empujar</button>
+</div>
 
-def agregar_tarea(tareas, tarea_nueva):
-    pass
-
-def mostrar_tareas(tareas):
-    pass
-
-def eliminar_tarea(tareas, tarea_a_borrar):
-    pass
-
-
-# --- Código de prueba ---
-print("--- Gestión de Tareas ---")
-
-mis_tareas = ""
-mis_tareas = agregar_tarea(mis_tareas, "Estudiar Python")
-mis_tareas = agregar_tarea(mis_tareas, "Hacer ejercicio")
-mis_tareas = agregar_tarea(mis_tareas, "Comprar pan")
-
-mostrar_tareas(mis_tareas)
-
-mis_tareas = eliminar_tarea(mis_tareas, "Hacer ejercicio")
-
-print("Después de eliminar:")
-mostrar_tareas(mis_tareas)
-</textarea>
-
-<button onclick="runCode()">▶ Ejecutar</button>
-
-<h3>Salida:</h3>
-<pre id="output"></pre>
+<!-- Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-let pyodideReadyPromise = loadPyodide({
-  indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/"
-});
+/* ESCENA */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf7f7f7);
 
-async function runCode() {
-  const output = document.getElementById("output");
-  output.textContent = "Ejecutando...\n";
+/* CÁMARA */
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+camera.position.set(8, 6, 10);
 
-  const pyodide = await pyodideReadyPromise;
+/* RENDER */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-  pyodide.setStdout({
-    batched: (data) => {
-      output.textContent += data;
-    }
-  });
+/* CONTROLES */
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-  pyodide.setStderr({
-    batched: (data) => {
-      output.textContent += data;
-    }
-  });
+/* LUCES */
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-  try {
-    await pyodide.runPythonAsync(
-      document.getElementById("code").value
-    );
-  } catch (err) {
-    output.textContent += "\nERROR:\n" + err;
-  }
+const light = new THREE.DirectionalLight(0xffffff, 0.8);
+light.position.set(10, 10, 5);
+scene.add(light);
+
+/* SUELO */
+const ground = new THREE.Mesh(
+    new THREE.BoxGeometry(20, 0.2, 10),
+    new THREE.MeshStandardMaterial({ color: 0xcccccc })
+);
+ground.position.y = -0.1;
+scene.add(ground);
+
+/* BLOQUE */
+const block = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5, 1, 1),
+    new THREE.MeshStandardMaterial({ color: 0x0087C8 })
+);
+block.position.y = 0.5;
+scene.add(block);
+
+/* VARIABLES FÍSICAS */
+let velocity = 0;
+const frictionValue = 0.02;
+
+/* FUNCIÓN EMPUJAR */
+function pushBlock() {
+    velocity = 0.15;
 }
+
+/* ANIMACIÓN */
+function animate() {
+    requestAnimationFrame(animate);
+
+    const hasFriction = document.getElementById("friction").checked;
+
+    if (Math.abs(velocity) > 0.0001) {
+        block.position.x += velocity;
+
+        if (hasFriction) {
+            velocity *= (1 - frictionValue);
+        }
+    }
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+animate();
+
+/* RESPONSIVE */
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 
 </body>
