@@ -2,49 +2,49 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Primera Ley de Newton – Inercia</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primera Ley de Newton – Inercia (3D)</title>
 
 <style>
-body {
+  body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #f2f2f2;
-}
+    background: #f7f7f7;
+  }
 
-h1 {
-    margin: 10px;
+  h1 {
+    padding: 15px;
     color: #5A2382;
-}
+  }
 
-#ui {
+  #ui {
     position: absolute;
-    top: 70px;
-    left: 10px;
+    top: 80px;
+    left: 20px;
     background: white;
     padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    width: 240px;
-    z-index: 10;
-}
+    border-radius: 10px;
+    width: 260px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  }
 
-button {
+  button {
     width: 100%;
     padding: 10px;
-    margin-top: 10px;
     background: #E6500F;
-    border: none;
     color: white;
-    font-size: 14px;
-    border-radius: 5px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
     cursor: pointer;
-}
+  }
 
-label {
+  button:hover {
+    background: #c9470d;
+  }
+
+  canvas {
     display: block;
-    margin-top: 10px;
-}
+  }
 </style>
 </head>
 
@@ -53,106 +53,101 @@ label {
 <h1>Primera Ley de Newton – Inercia</h1>
 
 <div id="ui">
-    <p>
-        Si no actúa una fuerza neta,<br>
-        el movimiento no cambia.
-    </p>
+  <p>Si no actúa una fuerza neta,<br>el movimiento no cambia.</p>
 
-    <label>
-        <input type="checkbox" id="friction" checked>
-        Con fricción
-    </label>
+  <label>
+    <input type="checkbox" id="friccion" checked>
+    Con fricción
+  </label>
 
-    <button onclick="pushBlock()">Empujar</button>
+  <br><br>
+  <button onclick="empujar()">Empujar</button>
 </div>
 
 <!-- THREE -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-/* ESCENA */
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf7f7f7);
+let scene, camera, renderer, controls;
+let cube, velocity = 0;
 
-/* CÁMARA */
-const camera = new THREE.PerspectiveCamera(
+init();
+animate();
+
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf0f0f0);
+
+  camera = new THREE.PerspectiveCamera(
     60,
     window.innerWidth / window.innerHeight,
     0.1,
     1000
-);
-camera.position.set(10, 8, 14);
+  );
+  camera.position.set(6, 4, 6);
 
-/* RENDER */
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
 
-/* CONTROLES DE CÁMARA */
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0.5, 0);
-controls.update();
+  // CONTROLES (ACÁ ESTABA EL ERROR)
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
 
-/* LUCES */
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  // LUCES
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-const light = new THREE.DirectionalLight(0xffffff, 0.8);
-light.position.set(10, 15, 10);
-scene.add(light);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  dirLight.position.set(5, 10, 5);
+  scene.add(dirLight);
 
-/* SUELO GRANDE */
-const ground = new THREE.Mesh(
-    new THREE.BoxGeometry(40, 0.2, 20),
+  // PISO
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
     new THREE.MeshStandardMaterial({ color: 0xcccccc })
-);
-ground.position.y = -0.1;
-scene.add(ground);
+  );
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
 
-/* BLOQUE */
-const block = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5, 1, 1),
+  // CUBO
+  cube = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshStandardMaterial({ color: 0x0087C8 })
-);
-block.position.set(0, 0.5, 0);
-scene.add(block);
+  );
+  cube.position.y = 0.5;
+  scene.add(cube);
 
-/* VARIABLES FÍSICAS */
-let velocity = 0;
-const frictionValue = 0.03;
-const startX = 0;
-
-/* EMPUJAR (REINICIA SIEMPRE) */
-function pushBlock() {
-    block.position.x = startX;
-    velocity = 0.25;
+  window.addEventListener('resize', onResize);
 }
 
-/* ANIMACIÓN */
+function empujar() {
+  velocity = 0.1;
+}
+
 function animate() {
-    requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
 
-    const hasFriction = document.getElementById("friction").checked;
+  const friccionActiva = document.getElementById("friccion").checked;
 
-    if (Math.abs(velocity) > 0.0001) {
-        block.position.x += velocity;
+  if (velocity > 0) {
+    cube.position.x += velocity;
 
-        if (hasFriction) {
-            velocity *= (1 - frictionValue);
-        }
+    if (friccionActiva) {
+      velocity -= 0.001;
+      if (velocity < 0) velocity = 0;
     }
+  }
 
-    renderer.render(scene, camera);
+  controls.update();
+  renderer.render(scene, camera);
 }
 
-animate();
-
-/* RESPONSIVE */
-window.addEventListener("resize", () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
 </script>
 
 </body>
