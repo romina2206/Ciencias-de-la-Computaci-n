@@ -2,19 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Primera Ley de Newton – Inercia (3D)</title>
+<title>Primera Ley de Newton – Inercia</title>
 
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f7f7f7;
-  }
-
-  h1 {
-    padding: 15px;
-    color: #5A2382;
-  }
+  body { margin: 0; font-family: Arial; background: #f7f7f7; }
+  h1 { padding: 15px; color: #5A2382; }
 
   #ui {
     position: absolute;
@@ -37,14 +29,6 @@
     font-size: 16px;
     cursor: pointer;
   }
-
-  button:hover {
-    background: #c9470d;
-  }
-
-  canvas {
-    display: block;
-  }
 </style>
 </head>
 
@@ -64,14 +48,13 @@
   <button onclick="empujar()">Empujar</button>
 </div>
 
-
-
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js";
 
 let scene, camera, renderer, controls;
-let cube, velocity = 0;
+let cube;
+let velocity = 0;
 
 init();
 animate();
@@ -80,30 +63,22 @@ function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0f0f0);
 
-  camera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
+  camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1000);
   camera.position.set(6, 4, 6);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(innerWidth, innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // CONTROLES
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  // LUCES
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-  dirLight.position.set(5, 10, 5);
-  scene.add(dirLight);
+  const light = new THREE.DirectionalLight(0xffffff, 0.6);
+  light.position.set(5, 10, 5);
+  scene.add(light);
 
-  // PISO
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(30, 30),
     new THREE.MeshStandardMaterial({ color: 0xcccccc })
@@ -111,7 +86,6 @@ function init() {
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  // CUBO
   cube = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshStandardMaterial({ color: 0x0087C8 })
@@ -123,21 +97,19 @@ function init() {
 }
 
 function empujar() {
-  cube.position.set(0, 0.5, 0); // vuelve al origen
+  cube.position.set(0, 0.5, 0);
   velocity = 0.12;
 }
 
-window.empujar = empujar; // 👈 importante para el botón
+window.empujar = empujar;
 
 function animate() {
   requestAnimationFrame(animate);
 
-  const friccionActiva = document.getElementById("friccion").checked;
-
   if (velocity > 0) {
     cube.position.x += velocity;
 
-    if (friccionActiva) {
+    if (document.getElementById("friccion").checked) {
       velocity -= 0.002;
       if (velocity < 0) velocity = 0;
     }
@@ -148,12 +120,11 @@ function animate() {
 }
 
 function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(innerWidth, innerHeight);
 }
 </script>
-
 
 </body>
 </html>
