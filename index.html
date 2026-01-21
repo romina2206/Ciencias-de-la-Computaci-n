@@ -92,7 +92,7 @@ function init() {
   document.body.appendChild(renderer.domElement);
 
   // CONTROLES (ACÁ ESTABA EL ERROR)
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
   // LUCES
