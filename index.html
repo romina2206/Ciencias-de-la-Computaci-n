@@ -9,11 +9,17 @@
     margin: 0;
     font-family: Arial, sans-serif;
     background: #f7f7f7;
+    overflow: hidden; /* Evita barras de desplazamiento */
   }
 
   h1 {
     padding: 15px;
     color: #5A2382;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    z-index: 10;
   }
 
   #ui {
@@ -25,6 +31,7 @@
     border-radius: 10px;
     width: 260px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    z-index: 10;
   }
 
   button {
@@ -37,7 +44,21 @@
     font-size: 16px;
     cursor: pointer;
   }
+  
+  button:hover {
+    background: #c9420a;
+  }
 </style>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+
 </head>
 
 <body>
@@ -53,92 +74,111 @@
   </label>
 
   <br><br>
-  <button onclick="empujar()">Empujar</button>
+  <button id="btn-empujar">Empujar</button>
 </div>
 
-<!-- THREE ESTABLE -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/examples/js/controls/OrbitControls.js"></script>
+<script type="module">
+  // 1. Importamos Three y OrbitControls correctamente
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-<script>
-let scene, camera, renderer, controls;
-let cube;
-let velocity = 0;
+  let scene, camera, renderer, controls;
+  let cube;
+  let velocity = 0;
 
-init();
-animate();
+  init();
+  animate();
 
-function init() {
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf0f0f0);
+  function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
 
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(6, 5, 8);
+    camera = new THREE.PerspectiveCamera(
+      60,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      100
+    );
+    camera.position.set(6, 5, 8);
+    camera.lookAt(0, 0, 0);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.target.set(0, 0.5, 0);
+    // 2. Ahora OrbitControls sí es un constructor válido
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 0.5, 0);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-  const light = new THREE.DirectionalLight(0xffffff, 0.6);
-  light.position.set(5, 10, 5);
-  scene.add(light);
+    const light = new THREE.DirectionalLight(0xffffff, 0.6);
+    light.position.set(5, 10, 5);
+    scene.add(light);
 
-  // PISO
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(50, 50),
-    new THREE.MeshStandardMaterial({ color: 0xcccccc })
-  );
-  floor.rotation.x = -Math.PI / 2;
-  scene.add(floor);
+    // PISO
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(50, 50),
+      new THREE.MeshStandardMaterial({ color: 0xcccccc })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0;
+    scene.add(floor);
 
-  // CUBO
-  cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0x0087C8 })
-  );
-  resetCube();
-  scene.add(cube);
+    // CUBO
+    cube = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshStandardMaterial({ color: 0x0087C8 })
+    );
+    scene.add(cube);
+    
+    // Posicionamos el cubo inicialmente
+    resetCube();
 
-  window.addEventListener("resize", onResize);
-}
+    window.addEventListener("resize", onResize);
+    
+    // Vinculamos el botón via JS en lugar de HTML inline para evitar problemas de "scope"
+    document.getElementById('btn-empujar').addEventListener('click', empujar);
+  }
 
-function resetCube() {
-  cube.position.set(0, 0.5, 0);
-  velocity = 0;
-}
-
-function empujar() {
-  resetCube();
-  velocity = 0.15;
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  if (velocity > 0) {
-    cube.position.x += velocity;
-
-    if (document.getElementById("friccion").checked) {
-      velocity -= 0.003;
-      if (velocity < 0) velocity = 0;
+  function resetCube() {
+    // Verificamos que el cubo exista antes de moverlo
+    if(cube) {
+        cube.position.set(0, 0.5, 0);
+        velocity = 0;
     }
   }
 
-  controls.update();
-  renderer.render(scene, camera);
-}
+  // Esta función ahora es local al módulo, pero el event listener de arriba la conecta
+  function empujar() {
+    resetCube();
+    velocity = 0.15;
+  }
 
-function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
+  function animate() {
+    requestAnimationFrame(animate);
+
+    if (velocity > 0 && cube) {
+      cube.position.x += velocity;
+
+      // Accedemos al checkbox
+      const friccionCheck = document.getElementById("friccion");
+      if (friccionCheck && friccionCheck.checked) {
+        velocity -= 0.003;
+        if (velocity < 0) velocity = 0;
+      }
+    }
+
+    if(controls) controls.update();
+    renderer.render(scene, camera);
+  }
+
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
 </script>
 
 </body>
