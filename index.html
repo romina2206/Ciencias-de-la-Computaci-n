@@ -56,9 +56,9 @@
   <button onclick="empujar()">Empujar</button>
 </div>
 
-<!-- THREE CLÁSICO -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+<!-- THREE ESTABLE -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
 let scene, camera, renderer, controls;
@@ -72,14 +72,8 @@ function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0f0f0);
 
-  camera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-  );
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(6, 5, 8);
-  camera.lookAt(0, 0, 0);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -95,13 +89,12 @@ function init() {
   light.position.set(5, 10, 5);
   scene.add(light);
 
-  // PISO GRANDE (no se corta)
+  // PISO
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(50, 50),
     new THREE.MeshStandardMaterial({ color: 0xcccccc })
   );
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = 0;
   scene.add(floor);
 
   // CUBO
@@ -121,7 +114,7 @@ function resetCube() {
 }
 
 function empujar() {
-  resetCube();          // SIEMPRE vuelve al inicio
+  resetCube();
   velocity = 0.15;
 }
 
