@@ -68,7 +68,10 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
 
-<script>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js";
+
 let scene, camera, renderer, controls;
 let cube, velocity = 0;
 
@@ -91,7 +94,7 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // CONTROLES (ACÁ ESTABA EL ERROR)
+  // CONTROLES
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
@@ -104,7 +107,7 @@ function init() {
 
   // PISO
   const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(20, 20),
+    new THREE.PlaneGeometry(30, 30),
     new THREE.MeshStandardMaterial({ color: 0xcccccc })
   );
   floor.rotation.x = -Math.PI / 2;
@@ -115,15 +118,18 @@ function init() {
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshStandardMaterial({ color: 0x0087C8 })
   );
-  cube.position.y = 0.5;
+  cube.position.set(0, 0.5, 0);
   scene.add(cube);
 
-  window.addEventListener('resize', onResize);
+  window.addEventListener("resize", onResize);
 }
 
 function empujar() {
-  velocity = 0.1;
+  cube.position.set(0, 0.5, 0); // vuelve al origen
+  velocity = 0.12;
 }
+
+window.empujar = empujar; // 👈 importante para el botón
 
 function animate() {
   requestAnimationFrame(animate);
@@ -134,7 +140,7 @@ function animate() {
     cube.position.x += velocity;
 
     if (friccionActiva) {
-      velocity -= 0.001;
+      velocity -= 0.002;
       if (velocity < 0) velocity = 0;
     }
   }
@@ -149,6 +155,7 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 </script>
+
 
 </body>
 </html>
