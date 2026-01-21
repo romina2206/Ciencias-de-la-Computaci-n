@@ -2,52 +2,46 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Primera Ley de Newton – Inercia (3D)</title>
-
+<title>1ª Ley de Newton: Inercia + Vectores</title>
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f7f7f7;
-    overflow: hidden; /* Evita barras de desplazamiento */
-  }
+  body { margin: 0; font-family: Arial, sans-serif; background: #f7f7f7; overflow: hidden; }
+  h1 { padding: 15px; color: #5A2382; position: absolute; top: 0; left: 0; margin: 0; z-index: 10; }
 
-  h1 {
-    padding: 15px;
-    color: #5A2382;
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    z-index: 10;
-  }
-
-  #ui {
+  #ui-container {
     position: absolute;
     top: 80px;
     left: 20px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ui-panel {
     background: white;
     padding: 15px;
     border-radius: 10px;
     width: 260px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-    z-index: 10;
+  }
+
+  #status-panel {
+    background: #eef;
+    border-left: 5px solid #5A2382;
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
   }
 
   button {
-    width: 100%;
-    padding: 10px;
-    background: #E6500F;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
+    width: 100%; padding: 10px; background: #E6500F; color: white;
+    border: none; border-radius: 6px; font-size: 16px; cursor: pointer;
   }
+  button:hover { background: #c9420a; }
   
-  button:hover {
-    background: #c9420a;
-  }
+  /* Leyenda para las flechas */
+  .leyenda { font-size: 12px; margin-top: 10px; }
+  .color-box { display: inline-block; width: 10px; height: 10px; margin-right: 5px; }
 </style>
 
 <script type="importmap">
@@ -58,118 +52,190 @@
     }
   }
 </script>
-
 </head>
 
 <body>
 
-<h1>Primera Ley de Newton – Inercia</h1>
+<h1>Primera Ley de Newton: Inercia y Fuerzas</h1>
 
-<div id="ui">
-  <p>Si no actúa una fuerza neta,<br>el movimiento no cambia.</p>
+<div id="ui-container">
+  <div class="ui-panel">
+    <p>Si la fuerza neta es cero, el movimiento no cambia.</p>
+    <label>
+      <input type="checkbox" id="friccion" checked>
+      Activar Fricción
+    </label>
+    <br><br>
+    <button id="btn-empujar">Empujar (Aplicar Fuerza)</button>
 
-  <label>
-    <input type="checkbox" id="friccion" checked>
-    Con fricción
-  </label>
+    <div class="leyenda">
+        <p><span class="color-box" style="background: #00ff00;"></span>Fuerza Aplicada (Impulso)</p>
+        <p><span class="color-box" style="background: #ff0000;"></span>Fuerza de Fricción</p>
+    </div>
+  </div>
 
-  <br><br>
-  <button id="btn-empujar">Empujar</button>
+  <div class="ui-panel" id="status-panel">
+    Estado: <span id="estado-dinamico">En reposo.</span>
+  </div>
 </div>
 
+
 <script type="module">
-  // 1. Importamos Three y OrbitControls correctamente
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
   let scene, camera, renderer, controls;
   let cube;
+  // Variables para las flechas (vectores)
+  let pushArrow, frictionArrow;
+  // Variables de estado
   let velocity = 0;
+  let isPushing = false;
+  let pushTimeout;
+
+  // Elementos del DOM
+  const statusTextElem = document.getElementById('estado-dinamico');
+  const frictionCheckbox = document.getElementById("friccion");
 
   init();
   animate();
 
   function init() {
+    // 1. Configuración Básica
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
-
-    camera = new THREE.PerspectiveCamera(
-      60,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      100
-    );
-    camera.position.set(6, 5, 8);
-    camera.lookAt(0, 0, 0);
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 3, 10); // Cámara un poco más baja para ver mejor las flechas
+    camera.lookAt(0, 1, 0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // 2. Ahora OrbitControls sí es un constructor válido
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.target.set(0, 0.5, 0);
 
+    // Luces
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-
     const light = new THREE.DirectionalLight(0xffffff, 0.6);
     light.position.set(5, 10, 5);
     scene.add(light);
 
-    // PISO
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(50, 50),
-      new THREE.MeshStandardMaterial({ color: 0xcccccc })
-    );
+    // Piso y Cubo
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 20), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = 0;
     scene.add(floor);
 
-    // CUBO
-    cube = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshStandardMaterial({ color: 0x0087C8 })
-    );
+    cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0x0087C8 }));
     scene.add(cube);
-    
-    // Posicionamos el cubo inicialmente
     resetCube();
 
+    // --- AQUÍ CREAMOS LAS FLECHAS (ArrowHelper) ---
+    // THREE.ArrowHelper(dirección, origen, longitud, color, tamaño_cabeza, ancho_cabeza)
+
+    // 1. Flecha de EMPUJE (Verde, apunta a la derecha)
+    const pushDir = new THREE.Vector3(1, 0, 0);
+    // La creamos, pero la hacemos invisible inicialmente
+    pushArrow = new THREE.ArrowHelper(pushDir, cube.position, 2, 0x00ff00, 0.5, 0.3);
+    pushArrow.visible = false; 
+    scene.add(pushArrow);
+
+    // 2. Flecha de FRICCIÓN (Roja, apunta a la izquierda, opuesta al movimiento)
+    const frictionDir = new THREE.Vector3(-1, 0, 0);
+    // La ponemos un poco más arriba (y=1.2) para que no se solape con la verde
+    const frictionOrigin = cube.position.clone().add(new THREE.Vector3(0, 0.7, 0));
+    frictionArrow = new THREE.ArrowHelper(frictionDir, frictionOrigin, 1.5, 0xff0000, 0.4, 0.2);
+    frictionArrow.visible = false;
+    scene.add(frictionArrow);
+    // ---------------------------------------------
+
+    // Event Listeners
     window.addEventListener("resize", onResize);
-    
-    // Vinculamos el botón via JS en lugar de HTML inline para evitar problemas de "scope"
     document.getElementById('btn-empujar').addEventListener('click', empujar);
   }
 
   function resetCube() {
-    // Verificamos que el cubo exista antes de moverlo
     if(cube) {
-        cube.position.set(0, 0.5, 0);
+        cube.position.set(-5, 0.5, 0); // Empezamos más a la izquierda
         velocity = 0;
     }
   }
 
-  // Esta función ahora es local al módulo, pero el event listener de arriba la conecta
   function empujar() {
     resetCube();
-    velocity = 0.15;
+    velocity = 0.2; // Velocidad inicial
+
+    // Lógica visual del empuje
+    isPushing = true;
+    pushArrow.visible = true;
+    // Si había un timeout pendiente para ocultar la flecha, lo cancelamos
+    if(pushTimeout) clearTimeout(pushTimeout);
+    // Ocultamos la flecha de empuje después de 500ms (simula un impulso momentáneo)
+    pushTimeout = setTimeout(() => {
+        isPushing = false;
+        pushArrow.visible = false;
+    }, 500);
   }
+
+  // --- Función para actualizar el texto explicativo ---
+  function updateStatusText() {
+      if (velocity === 0) {
+          statusTextElem.innerHTML = "En reposo (Velocidad = 0).<br>Fuerza Neta = 0.";
+          statusTextElem.style.color = "#333";
+      } 
+      else if (isPushing) {
+           statusTextElem.innerHTML = "¡Fuerza Aplicada!<br>El cubo acelera momentáneamente.";
+           statusTextElem.style.color = "#009900";
+      }
+      else if (velocity > 0 && frictionCheckbox.checked) {
+          statusTextElem.innerHTML = "Moviéndose con FRICCIÓN.<br>Hay Fuerza Neta opuesta. Desacelerando.";
+           statusTextElem.style.color = "#cc0000";
+      } 
+      else if (velocity > 0 && !frictionCheckbox.checked) {
+          statusTextElem.innerHTML = "Moviéndose por INERCIA.<br>Fuerza Neta = 0. Velocidad constante.";
+           statusTextElem.style.color = "#0000cc";
+      }
+  }
+
 
   function animate() {
     requestAnimationFrame(animate);
 
-    if (velocity > 0 && cube) {
+    if(!cube) return; // Seguridad si el cubo no ha cargado
+
+    // 1. FÍSICA DEL MOVIMIENTO
+    if (velocity > 0) {
       cube.position.x += velocity;
 
-      // Accedemos al checkbox
-      const friccionCheck = document.getElementById("friccion");
-      if (friccionCheck && friccionCheck.checked) {
-        velocity -= 0.003;
+      if (frictionCheckbox.checked) {
+        velocity -= 0.002; // Fricción
         if (velocity < 0) velocity = 0;
       }
     }
 
+    // 2. ACTUALIZACIÓN VISUAL DE FLECHAS
+    
+    // Actualizar origen de la flecha de empuje para que siga al cubo mientras es visible
+    if(pushArrow.visible) {
+         pushArrow.position.copy(cube.position);
+    }
+
+    // Lógica de la flecha de fricción
+    if (velocity > 0 && frictionCheckbox.checked && !isPushing) {
+        // Si se mueve, hay fricción y no estamos empujando en este instante: mostrar flecha roja
+        frictionArrow.visible = true;
+        // Importante: La flecha debe seguir al cubo.
+        // Usamos copy() y luego add() para mantenerla un poco por encima del centro
+        frictionArrow.position.copy(cube.position).add(new THREE.Vector3(0, 0.7, 0));
+        // Opcional: ajustar el largo de la flecha según la velocidad (más rápido = más fricción)
+        frictionArrow.setLength(velocity * 8 + 0.5, 0.4, 0.2);
+    } else {
+        frictionArrow.visible = false;
+    }
+
+    // 3. ACTUALIZAR TEXTO Y RENDER
+    updateStatusText();
     if(controls) controls.update();
     renderer.render(scene, camera);
   }
